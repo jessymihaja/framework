@@ -57,7 +57,21 @@ public class FrontServlet extends HttpServlet {
                     String clas=getMappingUrls().get(request.getServletPath()).getClassName();
                     String met=getMappingUrls().get(request.getServletPath()).getMethod();
                     out.println(clas);
-                    out.println(cmet);
+                    try {
+                        Class<?> thisClass=Class.forName("test."+clas);
+                
+                    Method thisMethod=thisClass.getDeclaredMethod(met);
+                    
+                    Object thisInstance= thisClass.newInstance();
+                    
+                    Modelview resultat=(Modelview)thisMethod.invoke(thisInstance);
+                    
+                    RequestDispatcher rd=request.getRequestDispatcher(resultat.getView());
+                    rd.forward(request, response);
+                    
+                    } catch (Exception e) {
+                        out.print(e.getMessage());
+                    }
                     
                 }
                 
