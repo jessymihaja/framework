@@ -13,7 +13,7 @@ import etu2046.framework.Modelview;
  */
 public class Test2 {
      @Annotation(url="/get_all")
-    public String get_all_test(){
-        return "all_emp";
+    public Modelview get_all_test(){
+        return new Modelview("test_view.jsp");
     }
 }
