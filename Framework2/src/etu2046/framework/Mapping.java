@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -73,7 +76,8 @@ public static HashMap<String, Mapping> getMethodsHashMapFromPackage(String packa
             System.out.println("name: " + classe);
             Class<?> tempClass = Class.forName(ObjectPackage + classe);
             Object obj=tempClass.newInstance();
-            Method [] methods=obj.getClass().getDeclaredMethods();
+            Method [] methods;
+            methods = obj.getClass().getDeclaredMethods();
             for (Method method1 : methods) {
                 if (method1.isAnnotationPresent(Annotation.class)) {
                     String url = method1.getAnnotation(Annotation.class).url();
@@ -84,6 +88,22 @@ public static HashMap<String, Mapping> getMethodsHashMapFromPackage(String packa
             }
         }
         return mapping;
+    }
+    public static void main(String[] args) {
+        try {
+            String packageDirectory="/home/jessy/NetBeansProjects/Framework_test/src/java/test/";
+            String chemin="test.";
+            
+            HashMap map=Mapping.getMethodsHashMapFromPackage(packageDirectory, chemin);
+          
+            
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
 }

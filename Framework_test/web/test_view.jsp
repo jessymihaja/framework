@@ -4,6 +4,8 @@
     Author     : jessy
 --%>
 
+<%@page import="test.Test2"%>
+<%@page import="java.util.ArrayList"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
@@ -11,7 +13,20 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>JSP Page</title>
     </head>
+    <%
+        ArrayList<Test2> list=(ArrayList<Test2>)request.getAttribute("liste");
+        
+        %>
     <body>
-        <h1>Hello World! ca marche all emp</h1>
+        <h1>ca marche pas all emp</h1>
+        <h2>liste des employes</h2>
+        <% 
+        for (Test2 emp : list) {
+                out.print(emp.getNom()+" " +emp.getPrenom());
+                %>
+               <br>
+               <%
+            }
+            %>
     </body>
 </html>
