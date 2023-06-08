@@ -1,11 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\Framework2",
-    "\\Framework2\\src",
-    "\\Framework2\\src\\etu2046",
-    "\\Framework2\\src\\etu2046\\framework",
-    "\\Framework2\\src\\etu2046\\framework\\servlet"
+    ""
   ],
+  "SelectedNode": "\\compile.sh",
   "PreviewInSolutionExplorer": false
 }
