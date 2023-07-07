@@ -6,6 +6,7 @@ package etu2046.framework.servlet;
  */
 
 import annotation.Annotation;
+import annotation.Scop;
 import etu2046.framework.Mapping;
 import etu2046.framework.Modelview;
 import java.io.File;
@@ -38,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 public class FrontServlet extends HttpServlet {
 
     HashMap<String, Mapping> mappingUrls;
+    HashMap<String, Object> singleton;
 
     public HashMap<String, Mapping> getMappingUrls() {
         return mappingUrls;
@@ -46,10 +48,18 @@ public class FrontServlet extends HttpServlet {
     public void setMappingUrls(HashMap<String, Mapping> mappingUrls) {
         this.mappingUrls = mappingUrls;
     }
+    public HashMap<String, Object> getSingleton() {
+        return singleton;
+    }
+
+    public void setSingleton(HashMap<String, Object> singleton) {
+        this.singleton = singleton;
+    }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         mappingUrls = new HashMap<>();
+        singleton = new HashMap<>();
         String rootPackage = config.getInitParameter("rootPackage");
         File folder = new File(rootPackage);
         File[] files = folder.listFiles();
@@ -58,6 +68,7 @@ public class FrontServlet extends HttpServlet {
             Class<?> classTemp = null;
             try {
                 classTemp = Class.forName("test." + fileName);
+                this.checkSingleton(classTemp);
             } catch (ClassNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -80,6 +91,37 @@ public class FrontServlet extends HttpServlet {
                     String methodName = method.getName();
                     mappingUrls.put(url, new Mapping(className, methodName));
                 }
+            }
+        }
+    }
+    public void checkSingleton(Class check){
+        if(check.isAnnotationPresent(Scop.class)){
+            
+            String className = check.getName();
+            this.getSingleton().put(className, null);
+        }
+    }
+    public void reset(Object objet) throws IllegalAccessException, InvocationTargetException{
+        Field[] fields = objet.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            String fieldName = upperFirst(field.getName());
+            Method methodSet = null;
+            try {
+                methodSet = objet.getClass().getMethod("set"+fieldName, field.getType());
+            } catch (Exception e) {
+                continue;
+            }
+            if(field.getType().equals(int.class)){
+                methodSet.invoke(objet, 0);
+            }
+            if(field.getType().equals(double.class)){
+                methodSet.invoke(objet, 0);
+            }
+            if(field.getType().equals(float.class)){
+                methodSet.invoke(objet, 0);
+            }
+            if(field.getType().equals(Object.class)){
+                methodSet.invoke(objet, (Object) null);
             }
         }
     }
@@ -142,13 +184,31 @@ public class FrontServlet extends HttpServlet {
         }
         return valiny;
     }
+    public Object getInClassInstance(String className,Class<?> classe) throws IllegalAccessException, InvocationTargetException, InstantiationException{
+        Object objet = null;
+        if(this.getSingleton().containsKey(className)){
+            Object obj = this.getSingleton().get(className);
+            if(obj == null){
+                obj = classe.newInstance();
+                objet = obj;
+                this.getSingleton().put(className, objet);
+            }else{
+                reset(obj);
+                objet = obj;
+            }
+        }
+        else{
+            objet = classe.newInstance();
+        }
+        return objet;
+    }
 
     public Modelview getModelview(String url, String[] params, String[] values) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException {
         Modelview valiny = null;
         if (getMappingUrls().get(url) instanceof Mapping) {
             Mapping util = getMappingUrls().get(url);
             Class classname = Class.forName(util.getClassName());
-            Object test = classname.newInstance();
+            Object test = this.getInClassInstance(classname.getName(), classname);
             Method m = this.getMethod(util.getMethod(), test);
             Field[] fields = classname.getDeclaredFields();
             Parameter[] parametres = m.getParameters();
