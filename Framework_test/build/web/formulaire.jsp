@@ -16,6 +16,7 @@
     </head>
     <body>
         <form action="save" method="GET">
+            <input type="number" name="id">
             <input type="text" name="nom">
             <input type="text" name="prenom">
             <input type="submit" value="OK">

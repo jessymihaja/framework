@@ -1,6 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Framework2",
+    "\\Framework2\\src",
+    "\\Framework2\\src\\etu2046",
+    "\\Framework2\\src\\etu2046\\framework",
+    "\\Framework2\\src\\etu2046\\framework\\servlet"
   ],
+  "SelectedNode": "\\Framework2\\src\\etu2046\\framework\\servlet\\FrontServlet.java",
   "PreviewInSolutionExplorer": false
 }

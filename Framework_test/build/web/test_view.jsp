@@ -21,12 +21,19 @@
         <h1>ca marche pas all emp</h1>
         <h2>liste des employes</h2>
         <% 
-        for (Test2 emp : list) {
-                out.print(emp.getNom()+" " +emp.getPrenom());
+        for (Test2 emp : list) { %>
+                <% out.print(emp.getId());%>
+             
+                <%
+                out.print(emp.getNom());
                 %>
                <br>
                <%
             }
             %>
+            <form action="get-detail" method="GET">
+                <input type="number" name="id">
+                <input type="submit" value="OK">
+            </form
     </body>
 </html>
