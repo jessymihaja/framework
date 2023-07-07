@@ -5,20 +5,25 @@ package etu2046.framework.servlet;
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 
+import annotation.Annotation;
 import etu2046.framework.Mapping;
 import etu2046.framework.Modelview;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -32,6 +37,53 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet(urlPatterns = {"/FrontServlet"})
 public class FrontServlet extends HttpServlet {
 
+    HashMap<String, Mapping> mappingUrls;
+
+    public HashMap<String, Mapping> getMappingUrls() {
+        return mappingUrls;
+    }
+
+    public void setMappingUrls(HashMap<String, Mapping> mappingUrls) {
+        this.mappingUrls = mappingUrls;
+    }
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        mappingUrls = new HashMap<>();
+        String rootPackage = config.getInitParameter("rootPackage");
+        File folder = new File(rootPackage);
+        File[] files = folder.listFiles();
+        for (File file : files) {
+            String fileName = file.getName().split(".java")[0];
+            Class<?> classTemp = null;
+            try {
+                classTemp = Class.forName("test." + fileName);
+            } catch (ClassNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            Object obj = null;
+            try {
+                obj = classTemp.newInstance();
+            } catch (InstantiationException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            Method[] methods = obj.getClass().getDeclaredMethods();
+            for (Method method : methods) {
+                if (method.isAnnotationPresent(Annotation.class)) {
+                    String url = method.getAnnotation(Annotation.class).url();
+                    String className = obj.getClass().getName();
+                    String methodName = method.getName();
+                    mappingUrls.put(url, new Mapping(className, methodName));
+                }
+            }
+        }
+    }
+
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -42,88 +94,161 @@ public class FrontServlet extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet FrontServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet FrontServlet at huhu " + request.getContextPath() + "</h1>");
-            out.println("<h2> from " + request.getServletPath() + "</h2>");
-            String path=request.getServletPath();
-            /*try{
-                if(getMappingUrls().get(path) instanceof Mapping){
-                out.println("mande");
-                out.println(getMappingUrls().size());
+        String[] parts = request.getServletPath().split("/");
+        String url = parts[parts.length - 1];
+        Modelview mv = null;
+        PrintWriter out = response.getWriter();
+        Enumeration<String> parametres = request.getParameterNames();
+        response.setContentType("text/html;charset=UTF-8");
+
+        out.print(url);
+        Modelview vue;
+        try {
+            Enumeration<String> parameters = request.getParameterNames();
+            String[] attributs = new String[0];
+            String[] values = new String[0];
+            while (parameters.hasMoreElements()) {
+                String parametre = parameters.nextElement();
+                String value = request.getParameter(parametre);
+                attributs = Arrays.copyOf(attributs, attributs.length + 1);
+                values = Arrays.copyOf(values, values.length + 1);
+                attributs[attributs.length - 1] = parametre;
+                values[values.length - 1] = value;
+            }
+            if (getModelview(url, attributs, values) != null) {
+                vue = this.getModelview(url, attributs, values);
+                String page = vue.getView();
+                for (Map.Entry m : vue.getData().entrySet()) {
+                    request.setAttribute((String) m.getKey(), m.getValue());
                 }
-                else{
-                    out.println("tsy mandee");
-                }
-            }catch(Exception e){
-                out.println(e.getMessage());
-            } for (Map.Entry m: getMappingUrls().entrySet()) {
-                        out.println((String) m.getKey()+" "+ m.getValue());
-                    }*/
-                if(getMappingUrls().containsKey("/save")){
-                    Enumeration<String> parameters=request.getParameterNames();
-                    ArrayList<String> attributs=new ArrayList<>();
-                    ArrayList<String> valeurs=new ArrayList<>();
-                    String parameter="";
-                    String value="";
-                    while(parameters.hasMoreElements()){
-                        
-                        parameter=parameters.nextElement();
-                        value=request.getParameter(parameter);
-                        out.println(parameter);
-                        out.println(value);
-                        attributs.add(parameter);
-                        valeurs.add(value);
-                    }
-                    
-                    Modelview newvue=this.save_model(attributs, valeurs, path);
-                    
-                    for (Map.Entry m: newvue.getData().entrySet()) {
-                        
-                        request.setAttribute((String) m.getKey(), m.getValue());
-                    }
-                    
-                    RequestDispatcher rd=request.getRequestDispatcher(newvue.getView());
-                    rd.forward(request, response);
-                }
-                else if(getMappingUrls().containsKey(path)){
-                   
-                    String clas=getMappingUrls().get(request.getServletPath()).getClassName();
-                    String met=getMappingUrls().get(request.getServletPath()).getMethod();
-                    out.println(clas);
-                    try {
-                        Class<?> thisClass=Class.forName("test."+clas);
-                
-                    Method thisMethod=thisClass.getDeclaredMethod(met);
-                    
-                    Object thisInstance= thisClass.newInstance();
-                    
-                    Modelview resultat=(Modelview)thisMethod.invoke(thisInstance);
-                    for (Map.Entry m: resultat.getData().entrySet()) {
-                        request.setAttribute((String) m.getKey(), m.getValue());
-                    }
-                    RequestDispatcher rd=request.getRequestDispatcher(resultat.getView());
-                    rd.forward(request, response);
-                    
-                    } catch (Exception e) {
-                        out.println(e.getMessage());
-                    }
-                    
-                }   
-            out.println("</body>");
-            out.println("</html>");
-        } catch(Exception e){
-            throw new RuntimeException(e);
+                RequestDispatcher dispatch = request.getRequestDispatcher(page);
+                dispatch.forward(request, response);
+            }
+            int x = 8;
+        } catch (Exception e) {
+            e.printStackTrace(out);
         }
     }
+
+    public Method getMethod(String method, Object obj) {
+        Method[] listeMethod = obj.getClass().getDeclaredMethods();
+        Method valiny = null;
+        for (Method method1 : listeMethod) {
+            if (method1.getName().equals(method)) {
+                valiny = method1;
+            }
+        }
+        return valiny;
+    }
+
+    public Modelview getModelview(String url, String[] params, String[] values) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException {
+        Modelview valiny = null;
+        if (getMappingUrls().get(url) instanceof Mapping) {
+            Mapping util = getMappingUrls().get(url);
+            Class classname = Class.forName(util.getClassName());
+            Object test = classname.newInstance();
+            Method m = this.getMethod(util.getMethod(), test);
+            Field[] fields = classname.getDeclaredFields();
+            Parameter[] parametres = m.getParameters();
+            Object[] tableau = new Object[parametres.length];
+            String[] allparm = new String[0];
+            for (Field field : fields) {
+                for (int i = 0; i < params.length; i++) {
+                    if (params[i].equals(field.getName())) {
+                        Method setobject = classname.getMethod("set" + this.upperFirst(params[i]), field.getType());
+                        Object type = null;
+                        if (field.getType() == String.class) {
+                            type = values[i];
+                        } else if (field.getType() == int.class || field.getType() == Integer.class) {
+                            type = Integer.valueOf(values[i]);
+                        } else if (field.getType() == double.class || field.getType() == Double.class) {
+                            type = Double.valueOf(values[i]);
+                        } else if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                            type = Boolean.valueOf(values[i]);
+                        }
+                        allparm = Arrays.copyOf(allparm, allparm.length + 1);
+                        if(type != null)
+                            allparm[allparm.length - 1] = type.getClass().getName();
+                        setobject.invoke(test, type);
+                    }
+                }
+            }
+            for (int j = 0; j < parametres.length; j++) {
+                for (int i = 0; i < params.length; i++) {
+                    if (params[i].equals(parametres[j].getName())) {
+                        Object type = null;
+                        if (parametres[j].getType() == String.class) {
+                            type = values[i];
+                        } else if (parametres[j].getType() == int.class || parametres[j].getType() == Integer.class) {
+                            type = Integer.valueOf(values[i]);
+                        } else if (parametres[j].getType() == double.class || parametres[j].getType() == Double.class) {
+                            type = Double.valueOf(values[i]);
+                        } else if (parametres[j].getType() == boolean.class || parametres[j].getType() == Boolean.class) {
+                            type = Boolean.valueOf(values[i]);
+                        }
+                        tableau[j] = type;
+                        int f = 0;
+                    }
+                }
+            }
+            valiny = (Modelview) m.invoke(test, tableau);
+        }
+        return valiny;
+    }
+
+    public Modelview getView(String url) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+        Modelview valiny = null;
+        if (getMappingUrls().get(url) instanceof Mapping) {
+            Mapping util = getMappingUrls().get(url);
+            Class classname = Class.forName(util.getClassName());
+            Object test = classname.newInstance();
+            Method method = test.getClass().getMethod(util.getMethod());
+            Object page = method.invoke(test);
+            valiny = (Modelview) page;
+        }
+        return valiny;
+    }
+
+    public Modelview save(String url, String[] params, String[] values) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
+        String classname = this.getMappingUrls().get(url).getClassName();
+        String methode = this.getMappingUrls().get(url).getMethod();
+        Class<?> classe = Class.forName(classname);
+        Object objet = classe.newInstance();
+        Field[] fields = classe.getDeclaredFields();
+        String[] allparm = new String[0];
+        for (Field field : fields) {
+            for (int i = 0; i < params.length; i++) {
+                if (params[i].equals(field.getName())) {
+                    Method setobject = classe.getMethod("set" + this.upperFirst(params[i]), field.getType());
+                    Object type = null;
+                    if (field.getType() == String.class) {
+                        type = values[i];
+                    } else if (field.getType() == int.class || field.getType() == Integer.class) {
+                        type = Integer.valueOf(values[i]);
+                    } else if (field.getType() == double.class || field.getType() == Double.class) {
+                        type = Double.valueOf(values[i]);
+                    } else if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                        type = Boolean.valueOf(values[i]);
+                    }
+                    allparm = Arrays.copyOf(allparm, allparm.length + 1);
+                    if(type != null)
+                        allparm[allparm.length - 1] = type.getClass().getName();
+                    setobject.invoke(objet, type);
+                }
+            }
+        }
+        Method method = classe.getDeclaredMethod(methode);
+        Modelview mv = (Modelview) method.invoke(objet);
+        return mv;
+    }
+
+    public String upperFirst(String text) {
+        return text.substring(0, 1).toUpperCase() + text.substring(1);
+    }
+
+    
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -137,21 +262,7 @@ public class FrontServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try {
-            processRequest(request, response);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchMethodException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvocationTargetException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        processRequest(request, response);
     }
 
     /**
@@ -165,21 +276,7 @@ public class FrontServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try {
-            processRequest(request, response);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchMethodException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvocationTargetException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        processRequest(request, response);
     }
 
     /**
@@ -191,80 +288,5 @@ public class FrontServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-    HashMap<String, Mapping> MappingUrls;
-
-    public HashMap<String, Mapping> getMappingUrls() {
-        return MappingUrls;
-    }
-
-    public void setMappingUrls(HashMap<String, Mapping> MappingUrls) {
-        this.MappingUrls = MappingUrls;
-    }
-    public Modelview save_model(ArrayList<String> attributs,ArrayList<String> valeurs,String path) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException{
-        System.out.println("mande_model1");
-        String clas=getMappingUrls().get(path).getClassName();
-        String met=getMappingUrls().get(path).getMethod();
-        Class<?> thisClass=Class.forName("test."+clas);
-        Object thisInstance= thisClass.getConstructor().newInstance();
-        Method thisMethod=thisClass.getDeclaredMethod(met);
-        Field[] field_tab=thisClass.getDeclaredFields();
-        
-        int compteur=0;
-       
-        for (Field field : field_tab) {
-            
-            for (String attribut : attributs) {
-                
-                if(attribut.equals(field.getName())){
-                    
-                    Method setter=thisClass.getMethod("set"+this.Maj(attribut),field.getType());
-                    //System.out.println(valeurs.get(compteur) +" "+ compteur);
-                    
-                    
-                    String fieldName=field.getName();
-                    if (field.getType().equals(String.class)) {
-                        setter.invoke(thisInstance,String.valueOf(valeurs.get(compteur)));
-                    } else if (field.getType().equals(int.class)) {
-                        setter.invoke(thisInstance,Integer.valueOf(valeurs.get(compteur)));
-                    } else if (field.getType().equals(double.class)) {
-                        setter.invoke(thisInstance,Double.valueOf(valeurs.get(compteur)));
-                    }
-                    
-
-                }
-                
-            }
-            compteur++;
-        }
-        
-        Modelview view=(Modelview)thisMethod.invoke(thisInstance);
-        
-        return view;
-    }
-    public String Maj(String string){
-        String maj=string.substring(0,1).toUpperCase()+string.substring(1);
-        return maj;
-    }
-
-    @Override
-    public void init() throws ServletException {
-        String packageDirectory="/home/jessy/NetBeansProjects/Framework_test/src/java/test/";
-        String chemin="test.";
-        try {
-            HashMap<String,Mapping> mapp=new HashMap();
-            mapp=Mapping.getMethodsHashMapFromPackage(packageDirectory, chemin);
-            this.setMappingUrls(mapp);
-            
-        } catch (Exception e) {
-            System.out.println("non trouve");
-        }
-    }
-
-   
-    
-    
-    
-    
-    
 
 }

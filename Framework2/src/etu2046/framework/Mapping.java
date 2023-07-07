@@ -89,22 +89,6 @@ public static HashMap<String, Mapping> getMethodsHashMapFromPackage(String packa
         }
         return mapping;
     }
-    public static void main(String[] args) {
-        try {
-            String packageDirectory="/home/jessy/NetBeansProjects/Framework_test/src/java/test/";
-            String chemin="test.";
-            
-            HashMap map=Mapping.getMethodsHashMapFromPackage(packageDirectory, chemin);
-          
-            
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(Mapping.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
     
 }
     
