@@ -11,7 +11,8 @@
 <html>
     <%
         
-        Test2 emp=(Test2) request.getAttribute("liste");
+        //Test2 emp=(Test2) request.getAttribute("liste");
+        ArrayList<Test2> id=(ArrayList<Test2>)request.getAttribute("listeid");
 
         
         %>
@@ -23,16 +24,17 @@
         <h1>Hello World!</h1>
          
 <%
-         
-
-                 out.print(emp.getId());%>
+         for (Test2 emp : id) {
+                 
              
-                <%
+    
+                out.print(emp.getId());
                 out.print(emp.getNom());
+    }
                 %>
                <br>
-               <%
-           
-            %>
+               
+                  
+            
     </body>
 </html>

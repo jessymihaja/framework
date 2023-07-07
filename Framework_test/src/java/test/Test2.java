@@ -5,6 +5,7 @@
 package test;
 
 import annotation.Annotation;
+import annotation.Scop;
 import etu2046.framework.Modelview;
 import java.util.ArrayList;
 
@@ -12,9 +13,10 @@ import java.util.ArrayList;
  *
  * @author jessy
  */
+@Scop(isSingleton=true)
 public class Test2 {
 
-    int id;
+    int id=0;
     String nom;
     String prenom;
 
@@ -90,6 +92,15 @@ public class Test2 {
         model.addItem("liste", list);
         return model;
 
+    }
+    @Annotation(url="singleton")
+    public Modelview singleton(){
+        Modelview valiny = new Modelview("newjspdetail.jsp");
+        ArrayList<Test2> ls = new ArrayList<>();
+        this.setId(this.getId()+1);
+        ls.add(this);
+        valiny.addItem("listeid",ls);
+        return valiny;
     }
 
 }
